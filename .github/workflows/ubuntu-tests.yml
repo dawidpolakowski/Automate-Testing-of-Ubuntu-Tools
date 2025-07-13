@@ -1,4 +1,4 @@
-name: Ubuntu QA Test
+name: Ubuntu QA Tests
 
 on:
   push:
@@ -7,11 +7,13 @@ on:
     branches: [ main ]
 
 jobs:
-  run-tests:
+  test:
     runs-on: ubuntu-latest
+    env:
+      CI: true  # Optional marker for skipping systemd-based tests
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -21,8 +23,17 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install pytest
+
+      - name: Install and (try to) start SSH
+        run: |
+          sudo apt update
+          sudo apt install -y openssh-server
+          sudo mkdir -p /var/run/sshd
+          sudo systemctl start ssh || echo "systemctl not supported in GitHub Actions"
 
       - name: Run tests
         run: |
+          pytest -v
           pytest
